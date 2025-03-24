@@ -30,6 +30,21 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 	// Look Input Action
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* LookAction;
+
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* DashAction;
+
+	UPROPERTY(EditAnywhere, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	bool bCanDoubleJump = false;
+
+	UPROPERTY(EditAnywhere, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	bool bIsGrounded = true;
+
+	UPROPERTY(EditAnywhere, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	float CharLaunchForce;
+
+	UPROPERTY(EditAnywhere, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	float DashForce;
 	
 public:
 	// Sets default values for this character's properties
@@ -37,12 +52,19 @@ public:
 
 protected:
 
+	virtual void Landed(const FHitResult& Hit) override;
+
+	void DoubleJump();
+
 	/** INPUT FUNCTIONS */
 	// Called for movement input
 	void Move(const FInputActionValue& Value);
 
 	// Called for look input
 	void Look(const FInputActionValue& Value);
+
+	// Called for dashing
+	void Dash();
 	
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;

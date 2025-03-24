@@ -18,6 +18,7 @@ APlayerCharacter::APlayerCharacter()
 
 }
 
+
 void APlayerCharacter::NotifyControllerChanged()
 {
 	Super::NotifyControllerChanged();
@@ -40,7 +41,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	if (UEnhancedInputComponent* Input = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		// Jumping
-		Input->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
+		Input->BindAction(JumpAction, ETriggerEvent::Started, this, &APlayerCharacter::DoubleJump);
 		Input->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
 		// Moving
@@ -48,12 +49,44 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 		// Looking
 		Input->BindAction(LookAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Look);
+
+		// Dashing
+		Input->BindAction(DashAction, ETriggerEvent::Started, this, &APlayerCharacter::Dash);
 	}
 	else
 	{
 		UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input Component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
 	}
 	
+}
+
+void APlayerCharacter::Dash()
+{
+	const FVector ForwardDir = this->GetActorRotation().Vector();
+	LaunchCharacter(ForwardDir * DashForce, true, true);
+	
+}
+
+void APlayerCharacter::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+	bIsGrounded = true;
+	bCanDoubleJump = false;
+}
+
+void APlayerCharacter::DoubleJump()
+{
+	if (bIsGrounded && !bCanDoubleJump)
+	{
+		ACharacter::Jump();
+		bIsGrounded = false;
+		bCanDoubleJump = true;
+		
+	} else if (!bIsGrounded && bCanDoubleJump)
+	{
+		LaunchCharacter(FVector(0.0f, 0.0f, CharLaunchForce), false, true);
+		bCanDoubleJump = false;
+	}
 }
 
 void APlayerCharacter::Move(const FInputActionValue& Value)
