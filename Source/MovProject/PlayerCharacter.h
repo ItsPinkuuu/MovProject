@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "InputAction.h"
 #include "MovProjectCharacter.h"
+#include "Components/TimelineComponent.h"
 #include "GameFramework/Character.h"
 #include "PlayerCharacter.generated.h"
 
@@ -34,17 +35,23 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* DashAction;
 
-	UPROPERTY(EditAnywhere, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, Category = "Movement|Jump", meta = (AllowPrivateAccess = "true"))
 	bool bCanDoubleJump = false;
 
-	UPROPERTY(EditAnywhere, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, Category = "Movement|Jump", meta = (AllowPrivateAccess = "true"))
 	bool bIsGrounded = true;
 
-	UPROPERTY(EditAnywhere, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, Category = "Movement|Jump", meta = (AllowPrivateAccess = "true"))
 	float CharLaunchForce;
 
-	UPROPERTY(EditAnywhere, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, Category = "Movement|Dash", meta = (AllowPrivateAccess = "true"))
 	float DashForce;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Dash", meta = (AllowPrivateAccess = "true"))
+	bool bHasDashed = false;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Dash", meta = (AllowPrivateAccess = "true"))
+	float DashDuraction;
 	
 public:
 	// Sets default values for this character's properties
@@ -65,8 +72,15 @@ protected:
 
 	// Called for dashing
 	void Dash();
+
+	void ResetDash();
 	
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	void NotifyControllerChanged();
+
+
+private:
+
+	float TimeElapsed = 0;
 };

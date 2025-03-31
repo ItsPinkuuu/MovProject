@@ -2,8 +2,10 @@
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "FrameTypes.h"
 #include "MovProjectCharacter.h"
 #include "Camera/CameraComponent.h"
+#include "VectorTypes.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -15,7 +17,7 @@ APlayerCharacter::APlayerCharacter()
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Player Camera"));
 	Camera->SetupAttachment(RootComponent);
 	Camera->bUsePawnControlRotation = true;
-
+	
 }
 
 
@@ -62,9 +64,33 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 void APlayerCharacter::Dash()
 {
-	const FVector ForwardDir = this->GetActorRotation().Vector();
-	LaunchCharacter(ForwardDir * DashForce, true, true);
-	
+	FCollisionResponseParams ResponseParams;
+	FCollisionQueryParams QueryParams = FCollisionQueryParams::DefaultQueryParam;
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	QueryParams.AddIgnoredComponent(GetMesh());
+	FHitResult Hit;
+	const FVector StartTrace = Camera->GetComponentLocation();
+	const FRotator CurrentRotation = Camera->GetComponentRotation();
+	const FVector EndTrace = StartTrace + CurrentRotation.Vector() * DashForce;
+	GetWorld()->LineTraceSingleByChannel(Hit, StartTrace, EndTrace, ECC_Visibility, QueryParams, ResponseParams);
+	DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor(0, 175, 0), false, 1, 0, 1.333);
+
+	if (!bHasDashed)
+	{
+		TimeElapsed += GetWorld()->DeltaTimeSeconds;
+		const auto PlayerLocation = FMath::Lerp(StartTrace, EndTrace, DashDuraction * GetWorld()->DeltaTimeSeconds);
+		SetActorLocation(EndTrace, true);
+		// SetActorLocation(PlayerLocation);
+		bHasDashed = true;
+		FTimerHandle DashTimerHandle;
+		GetWorldTimerManager().SetTimer(DashTimerHandle, this, &APlayerCharacter::ResetDash, DashDuraction, false);
+	}
+}
+
+void APlayerCharacter::ResetDash()
+{
+	bHasDashed = false;
 }
 
 void APlayerCharacter::Landed(const FHitResult& Hit)
