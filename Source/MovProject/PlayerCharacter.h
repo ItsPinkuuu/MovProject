@@ -35,6 +35,8 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* DashAction;
 
+	/** JUMP */
+	
 	UPROPERTY(EditAnywhere, Category = "Movement|Jump", meta = (AllowPrivateAccess = "true"))
 	bool bCanDoubleJump = false;
 
@@ -44,14 +46,26 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, Category = "Movement|Jump", meta = (AllowPrivateAccess = "true"))
 	float CharLaunchForce;
 
+	/** DASH */
+	
 	UPROPERTY(EditAnywhere, Category = "Movement|Dash", meta = (AllowPrivateAccess = "true"))
-	float DashForce;
+	float DashDistance;
+	
+	UPROPERTY(EditAnywhere, Category = "Movement|Dash", meta = (AllowPrivateAccess = "true"))
+	float DashDuration;
 
 	UPROPERTY(EditAnywhere, Category = "Movement|Dash", meta = (AllowPrivateAccess = "true"))
-	bool bHasDashed = false;
+	bool bIsDashing = false;
 
 	UPROPERTY(EditAnywhere, Category = "Movement|Dash", meta = (AllowPrivateAccess = "true"))
-	float DashDuraction;
+	bool bCanDash = true;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Dash", meta = (AllowPrivateAccess = "true"))
+	float DashCooldown;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Dash", meta = (AllowPrivateAccess = "true"))
+	float DashTimeElapsed;
+	
 	
 public:
 	// Sets default values for this character's properties
@@ -60,6 +74,8 @@ public:
 protected:
 
 	virtual void Landed(const FHitResult& Hit) override;
+
+	virtual void Tick(float DeltaTime) override;
 
 	void DoubleJump();
 
@@ -71,9 +87,11 @@ protected:
 	void Look(const FInputActionValue& Value);
 
 	// Called for dashing
-	void Dash();
+	void StartDash();
 
-	void ResetDash();
+	void StopDash();
+
+	void ResetDashCooldown();
 	
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -81,6 +99,12 @@ protected:
 
 
 private:
+	
+	FTimerHandle DashCooldownTimer;
+	
+	FVector DashStartLocation;
+	FVector DashEndLocation;
+	FVector DashDirection;
 
-	float TimeElapsed = 0;
+	FVector2D MovementVector;
 };

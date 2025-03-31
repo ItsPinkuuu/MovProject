@@ -53,7 +53,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		Input->BindAction(LookAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Look);
 
 		// Dashing
-		Input->BindAction(DashAction, ETriggerEvent::Started, this, &APlayerCharacter::Dash);
+		Input->BindAction(DashAction, ETriggerEvent::Started, this, &APlayerCharacter::StartDash);
 	}
 	else
 	{
@@ -62,40 +62,63 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	
 }
 
-void APlayerCharacter::Dash()
+void APlayerCharacter::Tick(float DeltaTime)
 {
-	FCollisionResponseParams ResponseParams;
-	FCollisionQueryParams QueryParams = FCollisionQueryParams::DefaultQueryParam;
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	QueryParams.AddIgnoredComponent(GetMesh());
-	FHitResult Hit;
-	const FVector StartTrace = Camera->GetComponentLocation();
-	const FRotator CurrentRotation = Camera->GetComponentRotation();
-	const FVector EndTrace = StartTrace + CurrentRotation.Vector() * DashForce;
-	GetWorld()->LineTraceSingleByChannel(Hit, StartTrace, EndTrace, ECC_Visibility, QueryParams, ResponseParams);
-	DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor(0, 175, 0), false, 1, 0, 1.333);
+	Super::Tick(DeltaTime);
 
-	if (!bHasDashed)
+	if (bIsDashing)
 	{
-		TimeElapsed += GetWorld()->DeltaTimeSeconds;
-		const auto PlayerLocation = FMath::Lerp(StartTrace, EndTrace, DashDuraction * GetWorld()->DeltaTimeSeconds);
-		SetActorLocation(EndTrace, true);
-		// SetActorLocation(PlayerLocation);
-		bHasDashed = true;
-		FTimerHandle DashTimerHandle;
-		GetWorldTimerManager().SetTimer(DashTimerHandle, this, &APlayerCharacter::ResetDash, DashDuraction, false);
+		DashTimeElapsed += DeltaTime;
+		float Alpha = FMath::Clamp(DashTimeElapsed / DashDuration, 0.0f, 1.0f);
+		FVector NewLocation = FMath::Lerp(DashStartLocation, DashEndLocation, Alpha);
+		SetActorLocation(NewLocation, true);
+
+		if (Alpha >= 1.0f)
+		{
+			StopDash();
+		}
 	}
 }
 
-void APlayerCharacter::ResetDash()
+void APlayerCharacter::StartDash()
 {
-	bHasDashed = false;
+	if (bIsDashing || !bCanDash) return;
+
+	DashDirection = GetLastMovementInputVector();
+
+	if (DashDirection.IsNearlyZero())
+	{
+		DashDirection = GetVelocity().GetSafeNormal();
+	}
+
+	if (DashDirection.IsNearlyZero()) return;
+
+	if (DashDirection.Z) return;
+	
+	bIsDashing = true;
+	bCanDash = false;
+	DashTimeElapsed = 0.0f;
+	
+	DashStartLocation = GetActorLocation();
+	DashEndLocation = DashStartLocation + DashDirection * DashDistance;
+
+	GetWorldTimerManager().SetTimer(DashCooldownTimer, this, &APlayerCharacter::ResetDashCooldown, DashCooldown, false);
+}
+
+void APlayerCharacter::StopDash()
+{
+	bIsDashing = false;
+}
+
+void APlayerCharacter::ResetDashCooldown()
+{
+	bCanDash = true;
 }
 
 void APlayerCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
+	
 	bIsGrounded = true;
 	bCanDoubleJump = false;
 }
@@ -105,6 +128,7 @@ void APlayerCharacter::DoubleJump()
 	if (bIsGrounded && !bCanDoubleJump)
 	{
 		ACharacter::Jump();
+		
 		bIsGrounded = false;
 		bCanDoubleJump = true;
 		
@@ -118,7 +142,7 @@ void APlayerCharacter::DoubleJump()
 void APlayerCharacter::Move(const FInputActionValue& Value)
 {
 	// input is a Vector2D
-	FVector2D MovementVector = Value.Get<FVector2D>();
+	MovementVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
 	{
