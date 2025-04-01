@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "InputAction.h"
 #include "MovProjectCharacter.h"
+#include "WallRunComponent.h"
 #include "Components/TimelineComponent.h"
 #include "GameFramework/Character.h"
 #include "PlayerCharacter.generated.h"
@@ -65,6 +66,10 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 
 	UPROPERTY(EditAnywhere, Category = "Movement|Dash", meta = (AllowPrivateAccess = "true"))
 	float DashTimeElapsed;
+
+	/** WALL RUNNING */
+	UPROPERTY(EditAnywhere)
+	UWallRunComponent* WallRunComponent;
 	
 	
 public:
