@@ -68,8 +68,30 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 	float DashTimeElapsed;
 
 	/** WALL RUNNING */
-	UPROPERTY(EditAnywhere)
-	UWallRunComponent* WallRunComponent;
+	
+	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
+	float WallRunRange;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
+	float WallRunGravityScale;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
+	float DefaultGravityScale;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
+	float WallJumpForce;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
+	bool bIsWallRunning;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
+	FHitResult WallHit;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
+	FVector PreviousWallHitNormal;
+	
+	// UPROPERTY(EditAnywhere)
+	// UWallRunComponent* WallRunComponent;
 	
 	
 public:
@@ -97,6 +119,11 @@ protected:
 	void StopDash();
 
 	void ResetDashCooldown();
+
+	/** WALL RUNNING */
+	FHitResult CheckWall(bool bRight);
+
+	void ToggleWallRun(bool bEnable);
 	
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -104,7 +131,7 @@ protected:
 
 
 private:
-	
+	/** DASH */
 	FTimerHandle DashCooldownTimer;
 	
 	FVector DashStartLocation;
@@ -112,4 +139,7 @@ private:
 	FVector DashDirection;
 
 	FVector2D MovementVector;
+
+	/** WALL RUNNING */
+	
 };

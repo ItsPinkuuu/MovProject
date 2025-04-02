@@ -17,7 +17,7 @@ class MOVPROJECT_API UWallRunComponent : public UActorComponent
 	UPrimitiveComponent* OwnerRootComponent;
 
 	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
-	bool bIsWallRunning;
+	bool bIsWallRunning = false;
 
 	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
 	FVector WallNormal;
