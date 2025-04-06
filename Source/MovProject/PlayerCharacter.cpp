@@ -2,12 +2,8 @@
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "FrameTypes.h"
 #include "MovProjectCharacter.h"
 #include "Camera/CameraComponent.h"
-#include "VectorTypes.h"
-#include "Components/CapsuleComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -80,31 +76,6 @@ void APlayerCharacter::Tick(float DeltaTime)
 			StopDash();
 		}
 	}
-
-	/** WALL RUNNING */
-	if (GetCharacterMovement()->IsFalling() && !bIsGrounded)
-	{
-		FHitResult HitOutR = CheckWall(true);
-		FHitResult HitOutL = CheckWall(false);
-
-		if (WallHit.bBlockingHit) PreviousWallHitNormal = WallHit.ImpactNormal;
-
-		WallHit = HitOutR.Distance >= HitOutL.Distance ? HitOutR : HitOutL;
-
-		if (WallHit.bBlockingHit && !bIsWallRunning)
-		{
-			GEngine->AddOnScreenDebugMessage(1, 2.0f, FColor::Green, TEXT("Touching Wall"), false);
-			ToggleWallRun(true);
-		} else if (!WallHit.bBlockingHit && bIsWallRunning)
-		{
-			GEngine->AddOnScreenDebugMessage(1, 2.0f, FColor::Red, TEXT("Not Touching Wall"), false);
-			ToggleWallRun(false);
-		}
-	}
-	else if (bIsWallRunning)
-	{
-		ToggleWallRun(false);
-	}
 }
 
 /** DASHING */
@@ -145,66 +116,7 @@ void APlayerCharacter::ResetDashCooldown()
 }
 
 /** WALL RUNNING */
-FHitResult APlayerCharacter::CheckWall(bool bRight)
-{
-	const FName TraceTag("WallTraceTag");
-	// GetWorld()->DebugDrawTraceTag = TraceTag;
 
-	FCollisionQueryParams TraceParams = FCollisionQueryParams(TraceTag, true, this);
-	TraceParams.bTraceComplex = true;
-	TraceParams.bReturnPhysicalMaterial = false;
-	TraceParams.bFindInitialOverlaps = true;
-
-	FHitResult HitOut(ForceInit);
-	float DirectionMultiplier = bRight ? WallRunRange : -1.0f * WallRunRange;
-	FVector End = GetActorLocation() +
-		(GetActorForwardVector() * GetCapsuleComponent()->GetScaledCapsuleRadius()) +
-			(GetActorRightVector() * DirectionMultiplier);
-
-	FCollisionShape TraceShape = FCollisionShape::MakeSphere(30.0f);
-
-	GetWorld()->SweepSingleByChannel(
-		HitOut,
-		GetActorLocation(),
-		End,
-		GetActorRotation().Quaternion(),
-		ECollisionChannel::ECC_Visibility,
-		TraceShape,
-		TraceParams
-		);
-
-	return HitOut;
-}
-
-void APlayerCharacter::ToggleWallRun(bool bEnable)
-{
-	if (bEnable)
-	{
-		GetCharacterMovement()->GravityScale = WallRunGravityScale;
-
-		APlayerController* PC = Cast<APlayerController>(GetController());
-		PC->PlayerCameraManager->ViewPitchMax = 20.0f;
-		PC->PlayerCameraManager->ViewPitchMin = -20.0f;
-
-		if (FVector::DotProduct(GetActorUpVector(), GetVelocity() / GetVelocity().Size()) > 0.0f &&
-			PreviousWallHitNormal != WallHit.ImpactNormal)
-		{
-			LaunchCharacter(GetActorUpVector() * 0, false, true);
-		}
-
-		bIsWallRunning = true;
-	}
-	else
-	{
-		GetCharacterMovement()->GravityScale = DefaultGravityScale;
-
-		APlayerController* PC = Cast<APlayerController>(GetController());
-		PC->PlayerCameraManager->ViewPitchMax = 89.900002f;
-		PC->PlayerCameraManager->ViewPitchMin = -89.900002f;
-
-		bIsWallRunning = false;
-	}
-}
 
 /** DOUBLE JUMPING */
 void APlayerCharacter::Landed(const FHitResult& Hit)
@@ -217,29 +129,17 @@ void APlayerCharacter::Landed(const FHitResult& Hit)
 
 void APlayerCharacter::DoubleJump()
 {
-	if (bIsWallRunning)
+	if (bIsGrounded && !bCanDoubleJump)
 	{
-		FVector LaunchVector = WallHit.ImpactNormal;
-		LaunchVector.Normalize();
-
-		LaunchVector = (LaunchVector + (GetActorUpVector() * 1.0)) / 2;
-
-		LaunchCharacter(LaunchVector * WallJumpForce, false, false);
-	}
-	else
+		ACharacter::Jump();
+		
+		bIsGrounded = false;
+		bCanDoubleJump = true;
+		
+	} else if (!bIsGrounded && bCanDoubleJump)
 	{
-		if (bIsGrounded && !bCanDoubleJump)
-		{
-			ACharacter::Jump();
-			
-			bIsGrounded = false;
-			bCanDoubleJump = true;
-			
-		} else if (!bIsGrounded && bCanDoubleJump)
-		{
-			LaunchCharacter(FVector(0.0f, 0.0f, CharLaunchForce), false, true);
-			bCanDoubleJump = false;
-		}
+		LaunchCharacter(FVector(0.0f, 0.0f, CharLaunchForce), false, true);
+		bCanDoubleJump = false;
 	}
 }
 
@@ -253,11 +153,7 @@ void APlayerCharacter::Move(const FInputActionValue& Value)
 	if (Controller == nullptr) return;
 	
 	AddMovementInput(GetActorForwardVector(), MovementVector.Y);
-
-	if (!bIsWallRunning)
-	{
-		AddMovementInput(GetActorRightVector(), MovementVector.X);
-	}
+	AddMovementInput(GetActorRightVector(), MovementVector.X);
 }
 
 /** LOOKING AROUND */

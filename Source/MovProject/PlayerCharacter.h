@@ -4,7 +4,6 @@
 #include "InputAction.h"
 #include "MovProjectCharacter.h"
 #include "WallRunComponent.h"
-#include "Components/TimelineComponent.h"
 #include "GameFramework/Character.h"
 #include "PlayerCharacter.generated.h"
 
@@ -69,34 +68,15 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 
 	/** WALL RUNNING */
 	
-	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
-	float WallRunRange;
-
-	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
-	float WallRunGravityScale;
-
-	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
-	float DefaultGravityScale;
-
-	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
-	float WallJumpForce;
-
-	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
-	bool bIsWallRunning;
-
-	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
-	FHitResult WallHit;
-
-	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
-	FVector PreviousWallHitNormal;
-	
-	// UPROPERTY(EditAnywhere)
-	// UWallRunComponent* WallRunComponent;
+	UPROPERTY(EditAnywhere)
+	UWallRunComponent* WallRunComponent;
 	
 	
 public:
 	// Sets default values for this character's properties
 	APlayerCharacter();
+
+	
 
 protected:
 
