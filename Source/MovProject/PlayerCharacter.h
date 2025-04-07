@@ -67,31 +67,48 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 	float DashTimeElapsed;
 
 	/** WALL RUNNING */
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
+	bool bIsWallRunning;
+	
+	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
+	float WallRunGravity;
+	
+	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
+	float WallRunSpeed;
+	
+	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
+	float WallRunJumpForce;
+	
+	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
+	float WallRunTraceRange;
+	
 	
 	UPROPERTY(EditAnywhere)
 	UWallRunComponent* WallRunComponent;
+
+	/** SLIDING */
 	
 	
 public:
 	// Sets default values for this character's properties
 	APlayerCharacter();
 
-	
-
 protected:
 
 	virtual void Landed(const FHitResult& Hit) override;
 
 	virtual void Tick(float DeltaTime) override;
-
-	void DoubleJump();
-
+	
 	/** INPUT FUNCTIONS */
 	// Called for movement input
 	void Move(const FInputActionValue& Value);
 
 	// Called for look input
 	void Look(const FInputActionValue& Value);
+
+	// Called for Double Jump
+	void DoubleJump();
 
 	// Called for dashing
 	void StartDash();
@@ -100,10 +117,17 @@ protected:
 
 	void ResetDashCooldown();
 
-	/** WALL RUNNING */
-	FHitResult CheckWall(bool bRight);
+	// Called for Wall Running
+	void CheckForWall();
 
-	void ToggleWallRun(bool bEnable);
+	void StartWallRun();
+
+	void StopWallRun();
+
+	// Called for Sliding
+	void StartSliding();
+
+	void StopSliding();
 	
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -121,5 +145,7 @@ private:
 	FVector2D MovementVector;
 
 	/** WALL RUNNING */
+	FVector WallNormal;
+	FVector WallRunDirection;
 	
 };

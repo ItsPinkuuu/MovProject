@@ -117,6 +117,20 @@ void APlayerCharacter::ResetDashCooldown()
 
 /** WALL RUNNING */
 
+void APlayerCharacter::CheckForWall()
+{
+	
+}
+
+void APlayerCharacter::StartWallRun()
+{
+	
+}
+
+void APlayerCharacter::StopWallRun()
+{
+	
+}
 
 /** DOUBLE JUMPING */
 void APlayerCharacter::Landed(const FHitResult& Hit)
