@@ -1,9 +1,13 @@
 #include "PlayerCharacter.h"
 
+#include "EngineUtils.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "MovProjectCharacter.h"
 #include "Camera/CameraComponent.h"
+#include "Concepts/Iterable.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -17,7 +21,7 @@ APlayerCharacter::APlayerCharacter()
 	Camera->bUsePawnControlRotation = true;
 
 	// Creates Wall Running Component
-	WallRunComponent = CreateDefaultSubobject<UWallRunComponent>(TEXT("Wall Run Component"));
+	// WallRunComponent = CreateDefaultSubobject<UWallRunComponent>(TEXT("Wall Run Component"));
 	
 }
 
@@ -49,7 +53,9 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 		// Moving
 		Input->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Move);
-
+		// Input->BindAction(ForwardMoveAction, ETriggerEvent::Triggered, this, &APlayerCharacter::MoveForward);
+		// Input->BindAction(RightMoveAction, ETriggerEvent::Triggered, this, &APlayerCharacter::MoveRight);
+		
 		// Looking
 		Input->BindAction(LookAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Look);
 
@@ -78,6 +84,30 @@ void APlayerCharacter::Tick(float DeltaTime)
 		{
 			StopDash();
 		}
+	}
+
+	if (!bWallRunSuppressed)
+	{
+		WallRunUpdate(DeltaTime);
+	}
+
+	if (MovementVector.Y > 0.0f)
+	{
+		if (bIsWallRunningL)
+		{
+			WallRunCameraTilt(15.0f);
+			
+		} else if (bIsWallRunningR)
+		{
+			WallRunCameraTilt(-15.0f);
+			
+		} else
+		{
+			WallRunCameraTilt(0.0f);
+		}
+	} else
+	{
+		WallRunCameraTilt(0.0f);
 	}
 }
 
@@ -118,21 +148,144 @@ void APlayerCharacter::ResetDashCooldown()
 	bCanDash = true;
 }
 
+
 /** WALL RUNNING */
+
+void APlayerCharacter::WallRunUpdate(float DeltaTime)
+{
+	CheckForWall();
+	
+	if (bOnWall)
+	{
+		PlayerGravity = FMath::FInterpTo(PlayerGravity, WallRunGravity, DeltaTime, 10.0f);
+		
+	} else
+	{
+		StopWallRun();
+	}
+}
 
 void APlayerCharacter::CheckForWall()
 {
+	FVector Forward = GetActorForwardVector();
+	FVector Start = GetActorLocation();
 	
+	FVector EndR = Start + (GetActorRightVector() * WallRunTraceRange) + (GetActorForwardVector() * -35.0f);
+	FVector EndL = Start - (GetActorRightVector() * WallRunTraceRange) + (GetActorForwardVector() * -35.0f);
+
+	FHitResult Hit;
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+
+	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, EndR, ECC_Visibility, QueryParams))
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, "Trace hit");
+		
+		if (ValidWallNormal(Hit.ImpactNormal))
+		{
+			Hit.ImpactNormal = WallRunNormal;
+
+			WallRunDirection = -1.0f;
+			PLayerStickToWall();
+
+			bOnWall = true;
+			bIsWallRunning = true;
+			bIsWallRunningR = true;
+			bIsWallRunningL = false;
+
+		} else
+		{
+			bOnWall = false;
+		}
+		
+	} else if (GetWorld()->LineTraceSingleByChannel(Hit, Start, EndL, ECC_Visibility, QueryParams))
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, "Trace hit");
+
+		if (ValidWallNormal(Hit.ImpactNormal))
+		{
+			Hit.ImpactNormal = WallRunNormal;
+
+			WallRunDirection = 1.0f;
+			PLayerStickToWall();
+
+			bOnWall = true;
+			bIsWallRunning = true;
+			bIsWallRunningR = false;
+			bIsWallRunningL = true;
+
+		} else
+		{
+			bOnWall = false;
+		}
+		
+	} else
+	{
+		bOnWall = false;
+	}
+
+	DrawDebugLine(GetWorld(), Start, EndR, FColor::Green, false, 0.5f);
+	DrawDebugLine(GetWorld(), Start, EndL, FColor::Green, false, 0.5f);
 }
 
-void APlayerCharacter::StartWallRun()
+bool APlayerCharacter::ValidWallNormal(FVector WallNormal) const
 {
+	if (WallNormal.Z >= -0.52f && WallNormal.Z <= 0.52)
+	{
+		// GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, "Impact normal is VALID");
+
+		if (GetMovementComponent()->IsFalling() == true)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, "Impact normal is VALID and Player is FALLING");
+			return true;
+		}
+	}
 	
+	return false;
+}
+
+void APlayerCharacter::PLayerStickToWall()
+{
+	LaunchCharacter(PlayerToWallVector, false, false);
+	LaunchCharacter(
+		FVector::CrossProduct(WallRunNormal, FVector(0.0f, 1.0f, 0.0f)) * (WallRunSpeed * WallRunDirection),
+		false, true);
 }
 
 void APlayerCharacter::StopWallRun()
 {
+	if (bIsWallRunning)
+	{
+		bOnWall = false;
+		bIsWallRunning = false;
+		bIsWallRunningR = false;
+		bIsWallRunningL = false;
+
+		PlayerGravity = DefaultGravity;
+	}
+}
+
+void APlayerCharacter::SuppressWallRun(float WallRunSuppressDelay)
+{
+	bWallRunSuppressed = true;
+
+	GetWorldTimerManager().SetTimer(WallRunSuppressTimer, this, &APlayerCharacter::ResetWallRunSuppression, WallRunSuppressDelay, false);
+}
+
+void APlayerCharacter::ResetWallRunSuppression()
+{
+	bWallRunSuppressed = false;
+
+	GetWorldTimerManager().ClearTimer(WallRunSuppressTimer);
+}
+
+void APlayerCharacter::WallRunCameraTilt(float TargetXRoll)
+{
+	FRotator CurrentControllRotation = this->GetController()->GetControlRotation();
+	FRotator NewXYZRotation = FRotator(CurrentControllRotation.Pitch, CurrentControllRotation.Yaw, TargetXRoll);
+	FRotator NewControllRotation = FMath::RInterpTo(CurrentControllRotation, NewXYZRotation, GetWorld()->GetTimeSeconds(), 10.0f);
 	
+	this->GetController()->SetControlRotation(NewControllRotation);
 }
 
 /** DOUBLE JUMPING */
@@ -142,6 +295,9 @@ void APlayerCharacter::Landed(const FHitResult& Hit)
 	
 	bIsGrounded = true;
 	bCanDoubleJump = false;
+
+	StopWallRun();
+	bWallRunSuppressed = false;
 }
 
 void APlayerCharacter::DoubleJump()
@@ -157,6 +313,16 @@ void APlayerCharacter::DoubleJump()
 	{
 		LaunchCharacter(FVector(0.0f, 0.0f, CharLaunchForce), false, true);
 		bCanDoubleJump = false;
+	}
+
+	// Wall Running
+	if (bIsWallRunning)
+	{
+		bCanDoubleJump = true;
+		
+		SuppressWallRun(0.35f);
+		
+		LaunchCharacter(FVector(WallRunNormal.X * WallRunJumpForce, WallRunNormal.Y * WallRunJumpForce, CharLaunchForce), false, true);
 	}
 }
 

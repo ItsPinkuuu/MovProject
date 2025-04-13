@@ -5,6 +5,7 @@
 #include "MovProjectCharacter.h"
 #include "WallRunComponent.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "PlayerCharacter.generated.h"
 
 UCLASS()
@@ -15,6 +16,8 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 	// First person camera
 	UPROPERTY(EditAnywhere)
 	UCameraComponent* Camera;
+
+	
 
 	// MappingContext
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -27,6 +30,11 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 	// Move Input Action
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* MoveAction;
+	
+	// UInputAction* ForwardMoveAction;
+	//
+	// UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
+	// UInputAction* RightMoveAction;
 
 	// Look Input Action
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -69,7 +77,19 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 	/** WALL RUNNING */
 
 	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
+	bool bOnWall;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
 	bool bIsWallRunning;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
+	bool bIsWallRunningR;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
+	bool bIsWallRunningL;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
+	bool bWallRunGravity;
 	
 	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
 	float WallRunGravity;
@@ -82,10 +102,13 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 	
 	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
 	float WallRunTraceRange;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
+	bool bWallRunSuppressed;
 	
 	
-	UPROPERTY(EditAnywhere)
-	UWallRunComponent* WallRunComponent;
+	// UPROPERTY(EditAnywhere)
+	// UWallRunComponent* WallRunComponent;
 
 	/** SLIDING */
 	
@@ -103,7 +126,7 @@ protected:
 	/** INPUT FUNCTIONS */
 	// Called for movement input
 	void Move(const FInputActionValue& Value);
-
+	
 	// Called for look input
 	void Look(const FInputActionValue& Value);
 
@@ -118,11 +141,21 @@ protected:
 	void ResetDashCooldown();
 
 	// Called for Wall Running
+	void WallRunUpdate(float DeltaTime);
+	
 	void CheckForWall();
 
-	void StartWallRun();
+	bool ValidWallNormal(FVector WallNormal) const;
+
+	void PLayerStickToWall();
 
 	void StopWallRun();
+
+	void SuppressWallRun(float WallRunSuppressDelay);
+
+	void ResetWallRunSuppression();
+
+	void WallRunCameraTilt(float TargetXRoll);
 
 	// Called for Sliding
 	void StartSliding();
@@ -135,6 +168,9 @@ protected:
 
 
 private:
+	/** DEFAULT MOVEMENT */
+	FVector2D MovementVector;
+
 	/** DASH */
 	FTimerHandle DashCooldownTimer;
 	
@@ -142,10 +178,17 @@ private:
 	FVector DashEndLocation;
 	FVector DashDirection;
 
-	FVector2D MovementVector;
-
 	/** WALL RUNNING */
-	FVector WallNormal;
-	FVector WallRunDirection;
+	FTimerHandle WallRunSuppressTimer;
+	
+	FVector WallRunNormal;
+	float WallRunDirection;
+
+	FVector PlayerToWallVector = (WallRunNormal - GetActorLocation()).Length() * WallRunNormal;
+	FVector MovePlayerForwardVector;
+
+	float DefaultGravity = 1.25f;
+
+	float PlayerGravity = GetCharacterMovement()->GravityScale;
 	
 };
