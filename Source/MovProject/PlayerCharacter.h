@@ -92,7 +92,7 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 	bool bWallRunGravity;
 	
 	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
-	float WallRunGravity;
+	float WallRunGravityScale;
 	
 	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
 	float WallRunSpeed;

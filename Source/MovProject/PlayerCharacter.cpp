@@ -157,7 +157,7 @@ void APlayerCharacter::WallRunUpdate(float DeltaTime)
 	
 	if (bOnWall)
 	{
-		PlayerGravity = FMath::FInterpTo(PlayerGravity, WallRunGravity, DeltaTime, 10.0f);
+		PlayerGravity = FMath::FInterpTo(PlayerGravity, WallRunGravityScale, DeltaTime, 10.0f);
 		
 	} else
 	{
@@ -183,9 +183,9 @@ void APlayerCharacter::CheckForWall()
 		
 		if (ValidWallNormal(Hit.ImpactNormal))
 		{
-			Hit.ImpactNormal = WallRunNormal;
+			WallRunNormal = Hit.ImpactNormal;
 
-			WallRunDirection = -1.0f;
+			WallRunDirection = -1;
 			PLayerStickToWall();
 
 			bOnWall = true;
@@ -204,9 +204,9 @@ void APlayerCharacter::CheckForWall()
 
 		if (ValidWallNormal(Hit.ImpactNormal))
 		{
-			Hit.ImpactNormal = WallRunNormal;
+			WallRunNormal = Hit.ImpactNormal;
 
-			WallRunDirection = 1.0f;
+			WallRunDirection = 1;
 			PLayerStickToWall();
 
 			bOnWall = true;
@@ -246,10 +246,13 @@ bool APlayerCharacter::ValidWallNormal(FVector WallNormal) const
 
 void APlayerCharacter::PLayerStickToWall()
 {
+	// Stick player to wall
 	LaunchCharacter(PlayerToWallVector, false, false);
+
+	// Move player along the wall
 	LaunchCharacter(
-		FVector::CrossProduct(WallRunNormal, FVector(0.0f, 1.0f, 0.0f)) * (WallRunSpeed * WallRunDirection),
-		false, true);
+		FVector::CrossProduct(WallRunNormal, FVector(0.0f, 0.0f, 1.0f)) * (WallRunSpeed * WallRunDirection),
+		true, !bWallRunGravity);
 }
 
 void APlayerCharacter::StopWallRun()
