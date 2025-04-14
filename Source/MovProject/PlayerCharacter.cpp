@@ -90,32 +90,27 @@ void APlayerCharacter::Tick(float DeltaTime)
 	{
 		WallRunUpdate(DeltaTime);
 	}
-
-	if (MovementVector.Y > 0.0f)
+	
+	if (bIsWallRunningL)
 	{
-		if (bIsWallRunningL)
-		{
-			WallRunCameraTilt(15.0f);
-			
-		} else if (bIsWallRunningR)
-		{
-			WallRunCameraTilt(-15.0f);
-			
-		} else
-		{
-			WallRunCameraTilt(0.0f);
-		}
+		WallRunCameraTilt(15.0f);
+		
+	} else if (bIsWallRunningR)
+	{
+		WallRunCameraTilt(-15.0f);
+		
 	} else
 	{
 		WallRunCameraTilt(0.0f);
 	}
+	
 }
 
 /** DASHING */
 
 void APlayerCharacter::StartDash()
 {
-	if (bIsDashing || !bCanDash) return;
+	if (bIsDashing || !bCanDash || bIsWallRunning) return;
 
 	DashDirection = GetLastMovementInputVector();
 
@@ -205,7 +200,7 @@ void APlayerCharacter::CheckForWall()
 		if (ValidWallNormal(Hit.ImpactNormal))
 		{
 			WallRunNormal = Hit.ImpactNormal;
-
+			
 			WallRunDirection = 1;
 			PLayerStickToWall();
 
