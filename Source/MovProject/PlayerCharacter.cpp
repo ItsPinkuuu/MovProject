@@ -173,14 +173,18 @@ void APlayerCharacter::CheckForWall()
 	FVector Forward = GetActorForwardVector();
 	FVector Start = GetActorLocation();
 	
-	FVector EndR = Start + (GetActorRightVector() * WallRunTraceRange) + (GetActorForwardVector() * -35.0f);
-	FVector EndL = Start - (GetActorRightVector() * WallRunTraceRange) + (GetActorForwardVector() * -35.0f);
+	FVector EndSR = Start + (GetActorRightVector() * WallRunTraceRange) + (GetActorForwardVector() * -35.0f);
+	FVector EndSL = Start - (GetActorRightVector() * WallRunTraceRange) + (GetActorForwardVector() * -35.0f);
 
+	FVector EndR = Start + (GetActorRightVector() * (WallRunTraceRange));
+	FVector EndL = Start - (GetActorRightVector() * (WallRunTraceRange));
+	
 	FHitResult Hit;
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
 
-	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, EndR, ECC_Visibility, QueryParams))
+	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, EndR, ECC_Visibility, QueryParams) ||
+		GetWorld()->LineTraceSingleByChannel(Hit, Start, EndSR, ECC_Visibility, QueryParams))
 	{
 		// GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, "Trace hit");
 		
@@ -201,7 +205,8 @@ void APlayerCharacter::CheckForWall()
 			bOnWall = false;
 		}
 		
-	} else if (GetWorld()->LineTraceSingleByChannel(Hit, Start, EndL, ECC_Visibility, QueryParams))
+	} else if (GetWorld()->LineTraceSingleByChannel(Hit, Start, EndL, ECC_Visibility, QueryParams) ||
+		GetWorld()->LineTraceSingleByChannel(Hit, Start, EndSL, ECC_Visibility, QueryParams))
 	{
 		// GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, "Trace hit");
 
@@ -226,6 +231,9 @@ void APlayerCharacter::CheckForWall()
 	{
 		bOnWall = false;
 	}
+
+	DrawDebugLine(GetWorld(), Start, EndSR, FColor::Red, false, 0.5f);
+	DrawDebugLine(GetWorld(), Start, EndSL, FColor::Red, false, 0.5f);
 
 	DrawDebugLine(GetWorld(), Start, EndR, FColor::Green, false, 0.5f);
 	DrawDebugLine(GetWorld(), Start, EndL, FColor::Green, false, 0.5f);
@@ -289,7 +297,7 @@ void APlayerCharacter::WallRunCameraTilt(float TargetXRoll)
 {
 	FRotator CurrentControllRotation = this->GetController()->GetControlRotation();
 	FRotator NewXYZRotation = FRotator(CurrentControllRotation.Pitch, CurrentControllRotation.Yaw, TargetXRoll);
-	FRotator NewControllRotation = FMath::RInterpTo(CurrentControllRotation, NewXYZRotation, GetWorld()->GetTimeSeconds(), 10.0f);
+	FRotator NewControllRotation = FMath::RInterpTo(CurrentControllRotation, NewXYZRotation, GetWorld()->GetDeltaSeconds(), 10.0f);
 	
 	this->GetController()->SetControlRotation(NewControllRotation);
 }
@@ -321,11 +329,12 @@ void APlayerCharacter::DoubleJump()
 		LaunchCharacter(FVector(0.0f, 0.0f, CharLaunchForce), false, true);
 		bCanDoubleJump = false;
 	}
-
+  
 	// Wall Running
 	if (bIsWallRunning)
 	{
 		bCanDoubleJump = true;
+		bCanDash = true;
 		
 		SuppressWallRun(0.35f);
 		
