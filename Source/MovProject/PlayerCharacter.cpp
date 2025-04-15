@@ -140,7 +140,10 @@ void APlayerCharacter::StopDash()
 
 void APlayerCharacter::ResetDashCooldown()
 {
-	bCanDash = true;
+	if (bIsGrounded)
+	{
+		bCanDash = true;
+	}
 }
 
 
@@ -148,6 +151,11 @@ void APlayerCharacter::ResetDashCooldown()
 
 void APlayerCharacter::WallRunUpdate(float DeltaTime)
 {
+	if (MovementVector.Y < 0.5f)
+	{
+		return;
+	}
+	
 	CheckForWall();
 	
 	if (bOnWall)
@@ -174,7 +182,7 @@ void APlayerCharacter::CheckForWall()
 
 	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, EndR, ECC_Visibility, QueryParams))
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, "Trace hit");
+		// GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, "Trace hit");
 		
 		if (ValidWallNormal(Hit.ImpactNormal))
 		{
@@ -195,7 +203,7 @@ void APlayerCharacter::CheckForWall()
 		
 	} else if (GetWorld()->LineTraceSingleByChannel(Hit, Start, EndL, ECC_Visibility, QueryParams))
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, "Trace hit");
+		// GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, "Trace hit");
 
 		if (ValidWallNormal(Hit.ImpactNormal))
 		{
@@ -231,7 +239,7 @@ bool APlayerCharacter::ValidWallNormal(FVector WallNormal) const
 
 		if (GetMovementComponent()->IsFalling() == true)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, "Impact normal is VALID and Player is FALLING");
+			// GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, "Impact normal is VALID and Player is FALLING");
 			return true;
 		}
 	}
@@ -293,6 +301,7 @@ void APlayerCharacter::Landed(const FHitResult& Hit)
 	
 	bIsGrounded = true;
 	bCanDoubleJump = false;
+	bCanDash = true;
 
 	StopWallRun();
 	bWallRunSuppressed = false;
