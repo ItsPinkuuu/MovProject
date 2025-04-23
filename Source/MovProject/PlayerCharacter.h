@@ -30,11 +30,6 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 	// Move Input Action
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* MoveAction;
-	
-	// UInputAction* ForwardMoveAction;
-	//
-	// UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
-	// UInputAction* RightMoveAction;
 
 	// Look Input Action
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -42,6 +37,9 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* DashAction;
+
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* SlideCrouchAction;
 
 	/** JUMP */
 	
@@ -110,7 +108,14 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 	// UPROPERTY(EditAnywhere)
 	// UWallRunComponent* WallRunComponent;
 
+	/** CROUCHING */
+
+	// UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
+	
+	
 	/** SLIDING */
+
+	// UPROPERTY(EditAnywhere, Category = "Movement|Sliding", meta = (AllowPrivateAccess = "true"))
 	
 	
 public:
@@ -157,10 +162,26 @@ protected:
 
 	void WallRunCameraTilt(float TargetXRoll);
 
+	// Called for states
+	void ResolveMovement();
+
+	void SetMovementState();
+
+	void OnMovementStateChanged();
+
+	// Called for Crouching
+	void BeginCrouch();
+
+	void EndCrouch();
+
+	bool CanStand();
+
 	// Called for Sliding
 	void StartSliding();
 
 	void StopSliding();
+
+	void CalculateFloorInfluence();
 	
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -190,5 +211,8 @@ private:
 	float DefaultGravity = 1.25f;
 
 	float PlayerGravity = GetCharacterMovement()->GravityScale;
+
+	/** SLIDING */
+	FTimerHandle SlideTimerHandle;
 	
 };

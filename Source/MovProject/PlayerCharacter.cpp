@@ -5,6 +5,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "MovProjectCharacter.h"
 #include "Camera/CameraComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Concepts/Iterable.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -61,6 +62,9 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 		// Dashing
 		Input->BindAction(DashAction, ETriggerEvent::Started, this, &APlayerCharacter::StartDash);
+
+		// Slide Crouch
+		
 	}
 	else
 	{
@@ -136,6 +140,8 @@ void APlayerCharacter::StartDash()
 void APlayerCharacter::StopDash()
 {
 	bIsDashing = false;
+
+	this->GetMovementComponent()->Velocity = FVector(0.0f, 0.0f, 0.0f);
 }
 
 void APlayerCharacter::ResetDashCooldown()
@@ -151,11 +157,6 @@ void APlayerCharacter::ResetDashCooldown()
 
 void APlayerCharacter::WallRunUpdate(float DeltaTime)
 {
-	if (MovementVector.Y < 0.5f)
-	{
-		return;
-	}
-	
 	CheckForWall();
 	
 	if (bOnWall)
@@ -232,11 +233,13 @@ void APlayerCharacter::CheckForWall()
 		bOnWall = false;
 	}
 
-	DrawDebugLine(GetWorld(), Start, EndSR, FColor::Red, false, 0.5f);
-	DrawDebugLine(GetWorld(), Start, EndSL, FColor::Red, false, 0.5f);
-
-	DrawDebugLine(GetWorld(), Start, EndR, FColor::Green, false, 0.5f);
-	DrawDebugLine(GetWorld(), Start, EndL, FColor::Green, false, 0.5f);
+	/** DEBUG LINETRACE */
+	
+	// DrawDebugLine(GetWorld(), Start, EndSR, FColor::Red, false, 0.5f);
+	// DrawDebugLine(GetWorld(), Start, EndSL, FColor::Red, false, 0.5f);
+	//
+	// DrawDebugLine(GetWorld(), Start, EndR, FColor::Green, false, 0.5f);
+	// DrawDebugLine(GetWorld(), Start, EndL, FColor::Green, false, 0.5f);
 }
 
 bool APlayerCharacter::ValidWallNormal(FVector WallNormal) const
@@ -300,6 +303,41 @@ void APlayerCharacter::WallRunCameraTilt(float TargetXRoll)
 	FRotator NewControllRotation = FMath::RInterpTo(CurrentControllRotation, NewXYZRotation, GetWorld()->GetDeltaSeconds(), 10.0f);
 	
 	this->GetController()->SetControlRotation(NewControllRotation);
+}
+
+/** MOVEMENT STATES */
+void APlayerCharacter::ResolveMovement()
+{
+}
+
+void APlayerCharacter::SetMovementState()
+{
+}
+
+void APlayerCharacter::OnMovementStateChanged()
+{
+}
+
+/** CROUCHING */
+void APlayerCharacter::BeginCrouch()
+{
+	
+}
+
+void APlayerCharacter::EndCrouch()
+{
+	
+}
+
+/** SLIDING */
+void APlayerCharacter::StartSliding()
+{
+	
+}
+
+void APlayerCharacter::StopSliding()
+{
+	
 }
 
 /** DOUBLE JUMPING */
