@@ -112,12 +112,32 @@ void APlayerCharacter::Tick(float DeltaTime)
 
 /** MOVEMENT STATES */
 
+void APlayerCharacter::SwitchMovementState(EMovementState MovementState)
+{
+	switch (MovementState)
+	{
+		case EMovementState::Walking:
+		
+			break;
+		case EMovementState::WallRunning:
+		
+			break;
+		case EMovementState::Crouching:
+		
+			break;
+		case EMovementState::Sliding:
+		
+			break;
+	}
+}
+
 void APlayerCharacter::ResolveMovement()
 {
 }
 
 void APlayerCharacter::SetMovementState()
 {
+	
 }
 
 void APlayerCharacter::OnMovementStateChanged()
@@ -330,6 +350,11 @@ void APlayerCharacter::EndCrouch()
 	
 }
 
+bool APlayerCharacter::CanStand()
+{
+	return true;
+}
+
 /** SLIDING */
 void APlayerCharacter::StartSliding()
 {
@@ -339,6 +364,10 @@ void APlayerCharacter::StartSliding()
 void APlayerCharacter::StopSliding()
 {
 	
+}
+
+void APlayerCharacter::CalculateFloorInfluence()
+{
 }
 
 /** DOUBLE JUMPING */

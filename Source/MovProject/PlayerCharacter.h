@@ -51,6 +51,9 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 	UInputAction* SlideCrouchAction;
 
 	/** STATES */
+
+	UPROPERTY(EditAnywhere)
+	EMovementState MovementState;
 	
 	/** JUMP */
 	
@@ -121,8 +124,14 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 
 	/** CROUCHING */
 
-	// UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
-	
+	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
+	bool bCrouchKeyDown;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
+	float StandingCapsuleHalfHeight;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
+	float StandingCameraZOffset;
 	
 	/** SLIDING */
 
@@ -138,13 +147,24 @@ protected:
 	virtual void Landed(const FHitResult& Hit) override;
 
 	virtual void Tick(float DeltaTime) override;
+
 	
-	/** INPUT FUNCTIONS */
+	// Called for states
+	void SwitchMovementState(EMovementState MovementState);
+	
+	void ResolveMovement();
+
+	void SetMovementState();
+
+	void OnMovementStateChanged();
+
+	
 	// Called for movement input
 	void Move(const FInputActionValue& Value);
 	
 	// Called for look input
 	void Look(const FInputActionValue& Value);
+
 
 	// Called for Double Jump
 	void DoubleJump();
@@ -172,13 +192,6 @@ protected:
 	void ResetWallRunSuppression();
 
 	void WallRunCameraTilt(float TargetXRoll);
-
-	// Called for states
-	void ResolveMovement();
-
-	void SetMovementState();
-
-	void OnMovementStateChanged();
 
 	// Called for Crouching
 	void BeginCrouch();
