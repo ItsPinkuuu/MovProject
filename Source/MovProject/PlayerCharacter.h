@@ -8,6 +8,15 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "PlayerCharacter.generated.h"
 
+UENUM ()
+enum class EMovementState : uint8
+{
+	Walking,
+	WallRunning,
+	Crouching,
+	Sliding
+};
+
 UCLASS()
 class MOVPROJECT_API APlayerCharacter : public ACharacter
 {
@@ -41,6 +50,8 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* SlideCrouchAction;
 
+	/** STATES */
+	
 	/** JUMP */
 	
 	UPROPERTY(EditAnywhere, Category = "Movement|Jump", meta = (AllowPrivateAccess = "true"))

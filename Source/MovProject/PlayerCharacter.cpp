@@ -110,6 +110,20 @@ void APlayerCharacter::Tick(float DeltaTime)
 	
 }
 
+/** MOVEMENT STATES */
+
+void APlayerCharacter::ResolveMovement()
+{
+}
+
+void APlayerCharacter::SetMovementState()
+{
+}
+
+void APlayerCharacter::OnMovementStateChanged()
+{
+}
+
 /** DASHING */
 
 void APlayerCharacter::StartDash()
@@ -303,19 +317,6 @@ void APlayerCharacter::WallRunCameraTilt(float TargetXRoll)
 	FRotator NewControllRotation = FMath::RInterpTo(CurrentControllRotation, NewXYZRotation, GetWorld()->GetDeltaSeconds(), 10.0f);
 	
 	this->GetController()->SetControlRotation(NewControllRotation);
-}
-
-/** MOVEMENT STATES */
-void APlayerCharacter::ResolveMovement()
-{
-}
-
-void APlayerCharacter::SetMovementState()
-{
-}
-
-void APlayerCharacter::OnMovementStateChanged()
-{
 }
 
 /** CROUCHING */
