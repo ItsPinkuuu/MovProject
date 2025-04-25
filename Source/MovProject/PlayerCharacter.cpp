@@ -64,7 +64,8 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		Input->BindAction(DashAction, ETriggerEvent::Started, this, &APlayerCharacter::StartDash);
 
 		// Slide Crouch
-		
+		Input->BindAction(SlideCrouchAction, ETriggerEvent::Started, this, &APlayerCharacter::BeginCrouch);
+		Input->BindAction(SlideCrouchAction, ETriggerEvent::Completed, this, &APlayerCharacter::EndCrouch);
 	}
 	else
 	{
@@ -107,29 +108,37 @@ void APlayerCharacter::Tick(float DeltaTime)
 	{
 		WallRunCameraTilt(0.0f);
 	}
+
+	if (bIsCrouching)
+	{
+		CrouchCameraHeightChange(CrouchingCameraHeight);
+	} else
+	{
+		CrouchCameraHeightChange(StandingCameraZOffset);
+	}
 	
 }
 
 /** MOVEMENT STATES */
 
-void APlayerCharacter::SwitchMovementState(EMovementState MovementState)
-{
-	switch (MovementState)
-	{
-		case EMovementState::Walking:
-		
-			break;
-		case EMovementState::WallRunning:
-		
-			break;
-		case EMovementState::Crouching:
-		
-			break;
-		case EMovementState::Sliding:
-		
-			break;
-	}
-}
+// void APlayerCharacter::SwitchMovementState(EMovementState MovementState)
+// {
+// 	switch (MovementState)
+// 	{
+// 		case EMovementState::Walking:
+// 		
+// 			break;
+// 		case EMovementState::WallRunning:
+// 		
+// 			break;
+// 		case EMovementState::Crouching:
+// 		
+// 			break;
+// 		case EMovementState::Sliding:
+// 		
+// 			break;
+// 	}
+// }
 
 void APlayerCharacter::ResolveMovement()
 {
@@ -148,7 +157,7 @@ void APlayerCharacter::OnMovementStateChanged()
 
 void APlayerCharacter::StartDash()
 {
-	if (bIsDashing || !bCanDash || bIsWallRunning) return;
+	if (bIsDashing || !bCanDash || bIsWallRunning || bIsCrouching) return;
 
 	DashDirection = GetLastMovementInputVector();
 
@@ -339,15 +348,37 @@ void APlayerCharacter::WallRunCameraTilt(float TargetXRoll)
 	this->GetController()->SetControlRotation(NewControllRotation);
 }
 
-/** CROUCHING */
+/** CROUCHING and SLIDING */
+
+void APlayerCharacter::CrouchCameraHeightChange(float CameraZHeight)
+{
+	FVector CurrentCameraLocation = Camera->GetRelativeLocation();
+	FVector NewXYZLocation = FVector(CurrentCameraLocation.X, CurrentCameraLocation.Y, CameraZHeight);
+	FVector NewCameraLocation = FMath::VInterpTo(
+		CurrentCameraLocation, NewXYZLocation,
+		GetWorld()->GetDeltaSeconds(), CrouchCameraHeightChangeSpeed);
+
+	Camera->SetRelativeLocation(NewCameraLocation);
+}
+
+// Crouching
 void APlayerCharacter::BeginCrouch()
 {
+	if (bIsCrouching) return;
+	
+	if (MovementVector.Y > 0.0f)
+	{
+		StartSliding();
+	}
+	
+	bIsCrouching = true;
+
 	
 }
 
 void APlayerCharacter::EndCrouch()
 {
-	
+	bIsCrouching = false;
 }
 
 bool APlayerCharacter::CanStand()
@@ -355,7 +386,7 @@ bool APlayerCharacter::CanStand()
 	return true;
 }
 
-/** SLIDING */
+// Sliding
 void APlayerCharacter::StartSliding()
 {
 	
@@ -418,6 +449,11 @@ void APlayerCharacter::Move(const FInputActionValue& Value)
 	MovementVector = Value.Get<FVector2D>();
 
 	if (Controller == nullptr) return;
+
+	if (MovementVector.Y > 0.0f)
+	{
+		
+	}
 	
 	AddMovementInput(GetActorForwardVector(), MovementVector.Y);
 	AddMovementInput(GetActorRightVector(), MovementVector.X);

@@ -54,6 +54,13 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 
 	UPROPERTY(EditAnywhere)
 	EMovementState MovementState;
+
+	/** WALKING */
+	UPROPERTY(EditAnywhere, Category = "Movement|Walking", meta = (AllowPrivateAccess = "true"))
+	float WalkSpeed;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Walking", meta = (AllowPrivateAccess = "true"))
+	float WalkSpeedDifference;
 	
 	/** JUMP */
 	
@@ -125,18 +132,27 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 	/** CROUCHING */
 
 	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
-	bool bCrouchKeyDown;
+	bool bIsCrouching;
 
 	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
 	float StandingCapsuleHalfHeight;
 
 	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
 	float StandingCameraZOffset;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
+	float CrouchingCameraHeight;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
+	float CrouchCameraHeightChangeSpeed;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
+	float CrouchWalkSpeed;
 	
 	/** SLIDING */
 
-	// UPROPERTY(EditAnywhere, Category = "Movement|Sliding", meta = (AllowPrivateAccess = "true"))
-	
+	UPROPERTY(EditAnywhere, Category = "Movement|Sliding", meta = (AllowPrivateAccess = "true"))
+	float SlidingSpeed;
 	
 public:
 	// Sets default values for this character's properties
@@ -150,7 +166,7 @@ protected:
 
 	
 	// Called for states
-	void SwitchMovementState(EMovementState MovementState);
+	// void SwitchMovementState(EMovementState MovementState);
 	
 	void ResolveMovement();
 
@@ -193,14 +209,18 @@ protected:
 
 	void WallRunCameraTilt(float TargetXRoll);
 
-	// Called for Crouching
+	// Called for Crouching and Sliding
+
+	void CrouchCameraHeightChange(float CameraZHeight);
+	
+	// Crouch
 	void BeginCrouch();
 
 	void EndCrouch();
 
 	bool CanStand();
 
-	// Called for Sliding
+	// Sliding
 	void StartSliding();
 
 	void StopSliding();
