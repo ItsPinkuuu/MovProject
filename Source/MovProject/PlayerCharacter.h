@@ -8,15 +8,6 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "PlayerCharacter.generated.h"
 
-UENUM ()
-enum class EMovementState : uint8
-{
-	Walking,
-	WallRunning,
-	Crouching,
-	Sliding
-};
-
 UCLASS()
 class MOVPROJECT_API APlayerCharacter : public ACharacter
 {
@@ -50,17 +41,12 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* SlideCrouchAction;
 
-	/** STATES */
-
-	UPROPERTY(EditAnywhere)
-	EMovementState MovementState;
-
 	/** WALKING */
 	UPROPERTY(EditAnywhere, Category = "Movement|Walking", meta = (AllowPrivateAccess = "true"))
-	float WalkSpeed;
+	float ForwardWalkSpeed;
 
 	UPROPERTY(EditAnywhere, Category = "Movement|Walking", meta = (AllowPrivateAccess = "true"))
-	float WalkSpeedDifference;
+	float WalkSpeed;
 	
 	/** JUMP */
 	
@@ -132,10 +118,19 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 	/** CROUCHING */
 
 	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
+	bool bCanStandBool;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
 	bool bIsCrouching;
 
 	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
+	bool bIsCrouchKeyDown;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
 	float StandingCapsuleHalfHeight;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
+	float CrouchingCapsuleHalfHeight;
 
 	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
 	float StandingCameraZOffset;
@@ -144,15 +139,30 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 	float CrouchingCameraHeight;
 
 	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
-	float CrouchCameraHeightChangeSpeed;
+	float CrouchHeightChangeSpeed;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
+	float StandHeightChangeSpeed;
 
 	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
 	float CrouchWalkSpeed;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
+	float UncrouchDelay;
 	
 	/** SLIDING */
 
 	UPROPERTY(EditAnywhere, Category = "Movement|Sliding", meta = (AllowPrivateAccess = "true"))
+	bool bIsSliding;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Sliding", meta = (AllowPrivateAccess = "true"))
 	float SlidingSpeed;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Sliding", meta = (AllowPrivateAccess = "true"))
+	float SlidingDuration;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Sliding", meta = (AllowPrivateAccess = "true"))
+	float SlideFriction;
 	
 public:
 	// Sets default values for this character's properties
@@ -163,16 +173,6 @@ protected:
 	virtual void Landed(const FHitResult& Hit) override;
 
 	virtual void Tick(float DeltaTime) override;
-
-	
-	// Called for states
-	// void SwitchMovementState(EMovementState MovementState);
-	
-	void ResolveMovement();
-
-	void SetMovementState();
-
-	void OnMovementStateChanged();
 
 	
 	// Called for movement input
@@ -211,21 +211,19 @@ protected:
 
 	// Called for Crouching and Sliding
 
-	void CrouchCameraHeightChange(float CameraZHeight);
+	void CrouchHeightChange(float CameraZHeight, float CapsuleHalfHeight, float HeightChangeSpeed);
 	
 	// Crouch
 	void BeginCrouch();
 
 	void EndCrouch();
-
+	
 	bool CanStand();
 
 	// Sliding
 	void StartSliding();
 
 	void StopSliding();
-
-	void CalculateFloorInfluence();
 	
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -256,7 +254,12 @@ private:
 
 	float PlayerGravity = GetCharacterMovement()->GravityScale;
 
+	/** CROUCHING */
+	FTimerHandle UncrouchTimerHandle;
+
 	/** SLIDING */
 	FTimerHandle SlideTimerHandle;
+
+	FVector FloorNormal;
 	
 };

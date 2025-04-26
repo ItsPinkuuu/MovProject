@@ -91,6 +91,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 		}
 	}
 
+	
 	if (!bWallRunSuppressed)
 	{
 		WallRunUpdate(DeltaTime);
@@ -109,48 +110,16 @@ void APlayerCharacter::Tick(float DeltaTime)
 		WallRunCameraTilt(0.0f);
 	}
 
-	if (bIsCrouching)
+	
+	if (bIsCrouchKeyDown || CanStand() == false || bIsSliding)
 	{
-		CrouchCameraHeightChange(CrouchingCameraHeight);
-	} else
+		CrouchHeightChange(CrouchingCameraHeight, CrouchingCapsuleHalfHeight, CrouchHeightChangeSpeed);
+		CanStand();
+	} else if (!bIsCrouchKeyDown || (CanStand() == true))
 	{
-		CrouchCameraHeightChange(StandingCameraZOffset);
+		EndCrouch();
+		CrouchHeightChange(StandingCameraZOffset, StandingCapsuleHalfHeight, StandHeightChangeSpeed);
 	}
-	
-}
-
-/** MOVEMENT STATES */
-
-// void APlayerCharacter::SwitchMovementState(EMovementState MovementState)
-// {
-// 	switch (MovementState)
-// 	{
-// 		case EMovementState::Walking:
-// 		
-// 			break;
-// 		case EMovementState::WallRunning:
-// 		
-// 			break;
-// 		case EMovementState::Crouching:
-// 		
-// 			break;
-// 		case EMovementState::Sliding:
-// 		
-// 			break;
-// 	}
-// }
-
-void APlayerCharacter::ResolveMovement()
-{
-}
-
-void APlayerCharacter::SetMovementState()
-{
-	
-}
-
-void APlayerCharacter::OnMovementStateChanged()
-{
 }
 
 /** DASHING */
@@ -184,7 +153,7 @@ void APlayerCharacter::StopDash()
 {
 	bIsDashing = false;
 
-	this->GetMovementComponent()->Velocity = FVector(0.0f, 0.0f, 0.0f);
+	this->GetMovementComponent()->Velocity.Z = 0.0f;
 }
 
 void APlayerCharacter::ResetDashCooldown()
@@ -350,55 +319,107 @@ void APlayerCharacter::WallRunCameraTilt(float TargetXRoll)
 
 /** CROUCHING and SLIDING */
 
-void APlayerCharacter::CrouchCameraHeightChange(float CameraZHeight)
+void APlayerCharacter::CrouchHeightChange(float CameraZHeight, float CapsuleHalfHeight, float HeightChangeSpeed)
 {
+	
+	// Camera
 	FVector CurrentCameraLocation = Camera->GetRelativeLocation();
 	FVector NewXYZLocation = FVector(CurrentCameraLocation.X, CurrentCameraLocation.Y, CameraZHeight);
 	FVector NewCameraLocation = FMath::VInterpTo(
 		CurrentCameraLocation, NewXYZLocation,
-		GetWorld()->GetDeltaSeconds(), CrouchCameraHeightChangeSpeed);
+		GetWorld()->GetDeltaSeconds(), HeightChangeSpeed);
 
 	Camera->SetRelativeLocation(NewCameraLocation);
+
+	// Capsule
+	float CurrentHalfHeight = this->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight();
+	float NewHalfHeight = FMath::FInterpTo(
+		CurrentHalfHeight, CapsuleHalfHeight,
+		GetWorld()->GetDeltaSeconds(), HeightChangeSpeed);
+
+	this->GetCapsuleComponent()->SetCapsuleHalfHeight(NewHalfHeight);
 }
 
 // Crouching
 void APlayerCharacter::BeginCrouch()
 {
-	if (bIsCrouching) return;
+	if (bIsCrouchKeyDown || bIsSliding || bIsWallRunning || bIsDashing) return;
 	
-	if (MovementVector.Y > 0.0f)
+	if (FVector::DotProduct(GetVelocity(), GetActorForwardVector()) > 1.0f)
 	{
 		StartSliding();
 	}
-	
-	bIsCrouching = true;
 
+	bIsCrouchKeyDown = true;
+	bIsCrouching = true;
 	
 }
 
 void APlayerCharacter::EndCrouch()
 {
-	bIsCrouching = false;
+	if (!bIsCrouching) return;
+
+	bIsCrouchKeyDown = false;
+	
+	if (bIsSliding)
+	{
+		StopSliding();
+	}
+	
+	if (CanStand() == true)
+	{
+		bIsCrouching = false;
+	}
 }
 
 bool APlayerCharacter::CanStand()
 {
+	FVector Start = FVector(GetActorLocation().X, GetActorLocation().Y,
+		GetActorLocation().Z - GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+
+	FVector End = Start + (FVector(0.0f, 0.0f,StandingCapsuleHalfHeight * 2));
+
+	FHitResult Hit;
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+
+	if (bIsCrouching)
+	{
+		if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, QueryParams))
+		{
+			bCanStandBool = false;
+			return false;
+		}
+	}
+	
+	// DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 0.5f);
+	bCanStandBool = true;
 	return true;
 }
 
 // Sliding
 void APlayerCharacter::StartSliding()
 {
+	if (bIsCrouching || bIsSliding || bIsWallRunning || bIsDashing || !bIsGrounded) return;
 	
+	bIsSliding = true;
+
+	GetCharacterMovement()->BrakingFrictionFactor = SlideFriction;
+
+	FVector LaunchDirection = GetActorForwardVector();
+	LaunchDirection.Z = 0.0f;
+	LaunchDirection.Normalize();
+
+	LaunchCharacter(LaunchDirection * SlidingSpeed, true, false);
+
+	GetWorld()->GetTimerManager().SetTimer(SlideTimerHandle, this, &APlayerCharacter::StopSliding, SlidingDuration);
 }
 
 void APlayerCharacter::StopSliding()
 {
-	
-}
+	bIsSliding = false;
 
-void APlayerCharacter::CalculateFloorInfluence()
-{
+	GetCharacterMovement()->BrakingFrictionFactor = 2.0f;
 }
 
 /** DOUBLE JUMPING */
@@ -450,9 +471,15 @@ void APlayerCharacter::Move(const FInputActionValue& Value)
 
 	if (Controller == nullptr) return;
 
-	if (MovementVector.Y > 0.0f)
+	if (bIsCrouching)
 	{
-		
+		this->GetCharacterMovement()->MaxWalkSpeed = CrouchWalkSpeed;
+	} else if (MovementVector.Y > 0.0f)
+	{
+		this->GetCharacterMovement()->MaxWalkSpeed = ForwardWalkSpeed;
+	} else
+	{
+		this->GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	}
 	
 	AddMovementInput(GetActorForwardVector(), MovementVector.Y);
