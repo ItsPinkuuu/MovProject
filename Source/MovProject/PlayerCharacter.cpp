@@ -9,6 +9,7 @@
 #include "Concepts/Iterable.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -120,6 +121,21 @@ void APlayerCharacter::Tick(float DeltaTime)
 		EndCrouch();
 		CrouchHeightChange(StandingCameraZOffset, StandingCapsuleHalfHeight, StandHeightChangeSpeed);
 	}
+
+	
+	FindLedge();
+	
+	if (bCanClimb)
+	{
+		GetCharacterMovement()->Velocity = FVector(0, 0, 0);
+
+		TimeSinceClimbStart += GetWorld()->DeltaTimeSeconds;
+		if (TimeSinceClimbStart >= ClimbTime)
+		{
+			DontClimb();
+		}
+	}
+	
 	
 }
 
@@ -424,6 +440,67 @@ void APlayerCharacter::StopSliding()
 	GetCharacterMovement()->BrakingFrictionFactor = 2.0f;
 }
 
+/** LEDGE CLIMBING */
+
+void APlayerCharacter::FindLedge()
+{
+	if (bCanClimb) return;
+	
+	FHitResult BottomHitResult;
+	FHitResult TopHitResult;
+
+	FCollisionQueryParams TraceParams;
+	TraceParams.AddIgnoredActor(this);
+
+	const FVector BottomTraceStart = GetActorLocation() + GetActorUpVector() * ReachLedgeLocation.Z;
+	const FVector BottomTraceEnd = GetActorLocation() + GetActorForwardVector() * ReachLedgeLocation.X + GetActorUpVector() * ReachLedgeLocation.Z;
+
+	const FVector TopTraceStart = GetActorLocation() + GetActorUpVector() * DistanceFromCapsuleMiddle;
+	const FVector TopTraceEnd = GetActorLocation() + GetActorForwardVector() * LedgeCheckDistance + GetActorUpVector() * DistanceFromCapsuleMiddle;
+
+	auto WallInFront = GetWorld()->LineTraceSingleByChannel(BottomHitResult, BottomTraceStart, BottomTraceEnd,
+															ClimbableChannel, TraceParams, FCollisionResponseParams());
+
+	auto WallAbove = GetWorld()->LineTraceSingleByChannel(TopHitResult, TopTraceStart, TopTraceEnd,
+														  InterruptClimbingChannel, TraceParams,
+														  FCollisionResponseParams());
+
+
+	if (WallInFront && !WallAbove && GetCharacterMovement()->IsFalling())
+	{
+		
+		// DrawDebugLine(GetWorld(), BottomTraceStart, BottomTraceEnd, FColor::Red, false, 0.5f);
+		// DrawDebugLine(GetWorld(), TopTraceStart, TopTraceEnd, FColor::Yellow, false, 0.5f);
+		
+		AttemptClimb();
+		TimeSinceClimbStart = 0.f;
+
+		FLatentActionInfo LatentInfo;
+		LatentInfo.CallbackTarget = Owner;
+		
+		UKismetSystemLibrary::MoveComponentTo(
+			RootComponent,
+			GetActorLocation() + GetActorForwardVector() * ClimbingLocation.X + GetActorUpVector() * ClimbingLocation.Z,
+			GetActorRotation(),
+			true,
+			true,
+			ClimbTime,
+			false,
+			EMoveComponentAction::Move,
+			LatentInfo);
+	}
+}
+
+void APlayerCharacter::AttemptClimb()
+{
+	bCanClimb = true;
+}
+
+void APlayerCharacter::DontClimb()
+{
+	bCanClimb = false;
+}
+
 /** DOUBLE JUMPING */
 void APlayerCharacter::Landed(const FHitResult& Hit)
 {
@@ -439,6 +516,7 @@ void APlayerCharacter::Landed(const FHitResult& Hit)
 
 void APlayerCharacter::DoubleJump()
 {
+	
 	if (bIsGrounded && !bCanDoubleJump)
 	{
 		ACharacter::Jump();

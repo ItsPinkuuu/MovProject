@@ -163,6 +163,35 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 
 	UPROPERTY(EditAnywhere, Category = "Movement|Sliding", meta = (AllowPrivateAccess = "true"))
 	float SlideFriction;
+
+	/** LEDGE CLIMBING */
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Ledge Climbing", meta = (AllowPrivateAccess = "true"))
+	TEnumAsByte<ECollisionChannel> ClimbableChannel;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Ledge Climbing", meta = (AllowPrivateAccess = "true"))
+	TEnumAsByte<ECollisionChannel> InterruptClimbingChannel;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Ledge Climbing", meta = (AllowPrivateAccess = "true"))
+	bool bCanClimb;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Ledge Climbing", meta = (AllowPrivateAccess = "true"))
+	float ClimbTime = 1.f;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Ledge Climbing", meta = (AllowPrivateAccess = "true"))
+	float TimeSinceClimbStart;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Ledge Climbing", meta = (AllowPrivateAccess = "true"))
+	float LedgeCheckDistance;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Ledge Climbing", meta = (AllowPrivateAccess = "true"))
+	float DistanceFromCapsuleMiddle;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Ledge Climbing", meta = (AllowPrivateAccess = "true"))
+	FVector ClimbingLocation;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Ledge Climbing", meta = (AllowPrivateAccess = "true"))
+	FVector ReachLedgeLocation;
 	
 public:
 	// Sets default values for this character's properties
@@ -224,6 +253,13 @@ protected:
 	void StartSliding();
 
 	void StopSliding();
+
+	// Ledge Climbing
+	void FindLedge();
+
+	void AttemptClimb();
+
+	void DontClimb();
 	
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
