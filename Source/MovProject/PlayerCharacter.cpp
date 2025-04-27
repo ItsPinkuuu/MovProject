@@ -120,6 +120,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 		EndCrouch();
 		CrouchHeightChange(StandingCameraZOffset, StandingCapsuleHalfHeight, StandHeightChangeSpeed);
 	}
+	
 }
 
 /** DASHING */
@@ -370,6 +371,7 @@ void APlayerCharacter::EndCrouch()
 	{
 		bIsCrouching = false;
 	}
+	
 }
 
 bool APlayerCharacter::CanStand()
