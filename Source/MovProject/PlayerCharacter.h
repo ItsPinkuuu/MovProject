@@ -8,6 +8,18 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "PlayerCharacter.generated.h"
 
+UENUM()
+enum EPlayerState
+{
+	Eps_Idle,
+	Eps_Walking,
+	Eps_Dash,
+	Eps_WallRun,
+	Eps_Crouch,
+	Eps_Sliding,
+	Eps_Climbing,
+};
+
 UCLASS()
 class MOVPROJECT_API APlayerCharacter : public ACharacter
 {
@@ -41,7 +53,18 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* SlideCrouchAction;
 
+	/** STATES */
+
+	UPROPERTY(VisibleAnywhere, Category = "Movement|States", meta = (AllowPrivateAccess = "true"))
+	TEnumAsByte<EPlayerState> CurrentState;
+
+
+	/** CAMERA */
+	// UPROPERTY(EditAnywhere, Category = "Movement|Camera|Head Bobbing", meta = (AllowPrivateAccess = "true"))
+	
+	
 	/** WALKING */
+	
 	UPROPERTY(EditAnywhere, Category = "Movement|Walking", meta = (AllowPrivateAccess = "true"))
 	float ForwardWalkSpeed;
 
@@ -209,6 +232,10 @@ protected:
 	
 	// Called for look input
 	void Look(const FInputActionValue& Value);
+
+
+	// Called for States
+	void CheckPlayerState();
 
 
 	// Called for Double Jump

@@ -79,71 +79,129 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (bIsDashing)
-	{
-		DashTimeElapsed += DeltaTime;
-		float Alpha = FMath::Clamp(DashTimeElapsed / DashDuration, 0.0f, 1.0f);
-		FVector NewLocation = FMath::Lerp(DashStartLocation, DashEndLocation, Alpha);
-		SetActorLocation(NewLocation, true);
-
-		if (Alpha >= 1.0f)
-		{
-			StopDash();
-		}
-	}
-
+	CheckPlayerState();
+	
+	FindLedge();
 	
 	if (!bWallRunSuppressed)
 	{
 		WallRunUpdate(DeltaTime);
 	}
 	
-	if (bIsWallRunningL)
-	{
-		WallRunCameraTilt(15.0f);
-		
-	} else if (bIsWallRunningR)
-	{
-		WallRunCameraTilt(-15.0f);
-		
-	} else
-	{
-		WallRunCameraTilt(0.0f);
-	}
+}
 
-	
-	if (bIsCrouchKeyDown || CanStand() == false || bIsSliding)
-	{
-		CrouchHeightChange(CrouchingCameraHeight, CrouchingCapsuleHalfHeight, CrouchHeightChangeSpeed);
-		CanStand();
-	} else if (!bIsCrouchKeyDown || (CanStand() == true))
-	{
-		EndCrouch();
-		CrouchHeightChange(StandingCameraZOffset, StandingCapsuleHalfHeight, StandHeightChangeSpeed);
-	}
 
+
+void APlayerCharacter::CheckPlayerState()
+{
+	float Alpha = 0;
 	
-	FindLedge();
-	
-	if (bCanClimb)
+	switch (CurrentState)
 	{
+	case Eps_Idle:
+		
+		if (GetCharacterMovement()->Velocity != FVector(0, 0, 0))
+		{
+			CurrentState = Eps_Walking;
+		}
+		break;
+
+	case Eps_Walking:
+		
+		if (MovementVector.Y > 0.0f)
+		{
+			this->GetCharacterMovement()->MaxWalkSpeed = ForwardWalkSpeed;
+		} else
+		{
+			this->GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+		}
+		if (GetCharacterMovement()->Velocity.Length() < 10.f)
+		{
+			CurrentState = Eps_Idle;
+		}
+		break;
+
+	case Eps_Dash:
+		DashTimeElapsed += GetWorld()->DeltaTimeSeconds;
+		Alpha = FMath::Clamp(DashTimeElapsed / DashDuration, 0.0f, 1.0f);
+		FVector NewLocation = FMath::Lerp(DashStartLocation, DashEndLocation, Alpha);
+		SetActorLocation(NewLocation, true);
+
+		if (Alpha >= 1.0f)
+		{
+			StopDash();
+			CurrentState = Eps_Walking;
+		}
+		break;
+
+	case Eps_WallRun:
+		
+		if (bIsWallRunningL)
+		{
+			WallRunCameraTilt(15.0f);
+		
+		} else if (bIsWallRunningR)
+		{
+			WallRunCameraTilt(-15.0f);
+		
+		} else
+		{
+			WallRunCameraTilt(0.0f);
+		}
+
+		if (!bOnWall)
+		{
+			CurrentState = Eps_Walking;
+		}
+		break;
+
+	case Eps_Climbing:
 		GetCharacterMovement()->Velocity = FVector(0, 0, 0);
 
 		TimeSinceClimbStart += GetWorld()->DeltaTimeSeconds;
 		if (TimeSinceClimbStart >= ClimbTime)
 		{
 			DontClimb();
+			CurrentState = Eps_Walking;
 		}
+		break;
+
+	case Eps_Crouch:
+		
+		this->GetCharacterMovement()->MaxWalkSpeed = CrouchWalkSpeed;
+
+		if (bIsCrouchKeyDown || CanStand() == false || bIsSliding)
+		{
+			CrouchHeightChange(CrouchingCameraHeight, CrouchingCapsuleHalfHeight, CrouchHeightChangeSpeed);
+			CanStand();
+		} else if (!bIsCrouchKeyDown || (CanStand() == true))
+		{
+			EndCrouch();
+			CrouchHeightChange(StandingCameraZOffset, StandingCapsuleHalfHeight, StandHeightChangeSpeed);
+			CurrentState = Eps_Walking;
+		}
+		break;
+
+	case Eps_Sliding:
+		
+		break;
+
+	default:
+		UE_LOG(LogTemp, Error, TEXT("No player state found. MoodCharacter.cpp - CheckPlayerState"));
+		CurrentState = Eps_Idle;
+		break;
 	}
-	
-	
 }
+
+
 
 /** DASHING */
 
 void APlayerCharacter::StartDash()
 {
 	if (bIsDashing || !bCanDash || bIsWallRunning || bIsCrouching) return;
+
+	CurrentState = Eps_Dash;
 
 	DashDirection = GetLastMovementInputVector();
 
@@ -169,7 +227,6 @@ void APlayerCharacter::StartDash()
 void APlayerCharacter::StopDash()
 {
 	bIsDashing = false;
-
 	this->GetMovementComponent()->Velocity.Z = 0.0f;
 }
 
@@ -190,6 +247,7 @@ void APlayerCharacter::WallRunUpdate(float DeltaTime)
 	
 	if (bOnWall)
 	{
+		CurrentState = Eps_WallRun;
 		PlayerGravity = FMath::FInterpTo(PlayerGravity, WallRunGravityScale, DeltaTime, 10.0f);
 		
 	} else
@@ -225,6 +283,8 @@ void APlayerCharacter::CheckForWall()
 			WallRunDirection = -1;
 			PLayerStickToWall();
 
+			CurrentState = Eps_WallRun;
+			
 			bOnWall = true;
 			bIsWallRunning = true;
 			bIsWallRunningR = true;
@@ -247,6 +307,8 @@ void APlayerCharacter::CheckForWall()
 			WallRunDirection = 1;
 			PLayerStickToWall();
 
+			CurrentState = Eps_WallRun;
+			
 			bOnWall = true;
 			bIsWallRunning = true;
 			bIsWallRunningR = false;
@@ -308,6 +370,8 @@ void APlayerCharacter::StopWallRun()
 		bIsWallRunningL = false;
 
 		PlayerGravity = DefaultGravity;
+		
+		CurrentState = Eps_Walking;
 	}
 }
 
@@ -369,6 +433,8 @@ void APlayerCharacter::BeginCrouch()
 
 	bIsCrouchKeyDown = true;
 	bIsCrouching = true;
+
+	CurrentState = Eps_Crouch;
 	
 }
 
@@ -421,6 +487,7 @@ void APlayerCharacter::StartSliding()
 	if (bIsCrouching || bIsSliding || bIsWallRunning || bIsDashing || !bIsGrounded) return;
 	
 	bIsSliding = true;
+	CurrentState = Eps_Sliding;
 
 	GetCharacterMovement()->BrakingFrictionFactor = SlideFriction;
 
@@ -438,6 +505,7 @@ void APlayerCharacter::StopSliding()
 	bIsSliding = false;
 
 	GetCharacterMovement()->BrakingFrictionFactor = 2.0f;
+	CurrentState = Eps_Crouch;
 }
 
 /** LEDGE CLIMBING */
@@ -473,6 +541,7 @@ void APlayerCharacter::FindLedge()
 		// DrawDebugLine(GetWorld(), TopTraceStart, TopTraceEnd, FColor::Yellow, false, 0.5f);
 		
 		AttemptClimb();
+		CurrentState = Eps_Climbing;
 		TimeSinceClimbStart = 0.f;
 
 		FLatentActionInfo LatentInfo;
@@ -550,17 +619,6 @@ void APlayerCharacter::Move(const FInputActionValue& Value)
 	MovementVector = Value.Get<FVector2D>();
 
 	if (Controller == nullptr) return;
-
-	if (bIsCrouching)
-	{
-		this->GetCharacterMovement()->MaxWalkSpeed = CrouchWalkSpeed;
-	} else if (MovementVector.Y > 0.0f)
-	{
-		this->GetCharacterMovement()->MaxWalkSpeed = ForwardWalkSpeed;
-	} else
-	{
-		this->GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-	}
 	
 	AddMovementInput(GetActorForwardVector(), MovementVector.Y);
 	AddMovementInput(GetActorRightVector(), MovementVector.X);
@@ -580,4 +638,5 @@ void APlayerCharacter::Look(const FInputActionValue& Value)
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
 }
+
 
