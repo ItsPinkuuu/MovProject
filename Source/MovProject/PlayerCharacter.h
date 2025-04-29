@@ -13,10 +13,8 @@ enum EPlayerState
 {
 	Eps_Idle,
 	Eps_Walking,
-	Eps_Dash,
 	Eps_WallRun,
 	Eps_Crouch,
-	Eps_Sliding,
 	Eps_Climbing,
 };
 
@@ -60,8 +58,8 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 
 
 	/** CAMERA */
-	// UPROPERTY(EditAnywhere, Category = "Movement|Camera|Head Bobbing", meta = (AllowPrivateAccess = "true"))
-	
+	UPROPERTY(EditAnywhere, Category = "Movement|Camera|Wall Running|Camera Tilt", meta = (AllowPrivateAccess = "true"))
+	float WallRunCameraTiltSpeed;
 	
 	/** WALKING */
 	
