@@ -137,30 +137,23 @@ void APlayerCharacter::CheckPlayerState()
 		}
 		break;
 
+	case Eps_Dash:
+		
+		break;
+
 	case Eps_WallRun:
 		
 		if (bIsWallRunningL)
 		{
-			WallRunCameraTilt(15.0f);
+			WallRunCameraTilt(WallRunCameraTiltAmount);
 		
 		} else if (bIsWallRunningR)
 		{
-			WallRunCameraTilt(-15.0f);
+			WallRunCameraTilt(-WallRunCameraTiltAmount);
 		}
 
 		if (!bOnWall)
 		{
-			CurrentState = Eps_Walking;
-		}
-		break;
-
-	case Eps_Climbing:
-		GetCharacterMovement()->Velocity = FVector(0, 0, 0);
-
-		TimeSinceClimbStart += GetWorld()->DeltaTimeSeconds;
-		if (TimeSinceClimbStart >= ClimbTime)
-		{
-			DontClimb();
 			CurrentState = Eps_Walking;
 		}
 		break;
@@ -176,6 +169,17 @@ void APlayerCharacter::CheckPlayerState()
 		} else if (!bIsCrouchKeyDown || (CanStand() == true))
 		{
 			EndCrouch();
+			CurrentState = Eps_Walking;
+		}
+		break;
+
+	case Eps_Climbing:
+		GetCharacterMovement()->Velocity = FVector(0, 0, 0);
+
+		TimeSinceClimbStart += GetWorld()->DeltaTimeSeconds;
+		if (TimeSinceClimbStart >= ClimbTime)
+		{
+			DontClimb();
 			CurrentState = Eps_Walking;
 		}
 		break;

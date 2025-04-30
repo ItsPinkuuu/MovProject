@@ -13,6 +13,7 @@ enum EPlayerState
 {
 	Eps_Idle,
 	Eps_Walking,
+	Eps_Dash,
 	Eps_WallRun,
 	Eps_Crouch,
 	Eps_Climbing,
@@ -131,6 +132,9 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 
 	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
 	bool bWallRunSuppressed;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
+	float WallRunCameraTiltAmount;
 	
 	
 	// UPROPERTY(EditAnywhere)
