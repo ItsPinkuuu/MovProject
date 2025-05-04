@@ -79,6 +79,8 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	bIsMidAir = GetCharacterMovement()->Velocity.Z != 0 ? 1 : 0;
+
 	CheckPlayerState();
 	
 	FindLedge();
@@ -95,6 +97,8 @@ void APlayerCharacter::Tick(float DeltaTime)
 		FVector NewLocation = FMath::Lerp(DashStartLocation, DashEndLocation, Alpha);
 		SetActorLocation(NewLocation, true);
 
+		Camera->FieldOfView = FMath::Lerp(DashFOV, WalkingFOV, Alpha);
+		
 		if (Alpha >= 1.0f)
 		{
 			StopDash();
@@ -112,6 +116,13 @@ void APlayerCharacter::CheckPlayerState()
 	switch (CurrentState)
 	{
 	case Eps_Idle:
+		Camera->FieldOfView = FMath::Lerp(Camera->FieldOfView, WalkingFOV, AlphaFOV);
+		CrouchHeightChange(StandingCameraZOffset, StandingCapsuleHalfHeight, StandHeightChangeSpeed);
+
+		if (!bIsMidAir)
+		{
+			GetWorld()->GetFirstPlayerController()->PlayerCameraManager->StartCameraShake(IdleHeadBob, 1.f);
+		}
 		
 		if (GetCharacterMovement()->Velocity != FVector(0, 0, 0))
 		{
@@ -123,6 +134,13 @@ void APlayerCharacter::CheckPlayerState()
 
 		WallRunCameraTilt(0.0f);
 		CrouchHeightChange(StandingCameraZOffset, StandingCapsuleHalfHeight, StandHeightChangeSpeed);
+
+		Camera->FieldOfView = FMath::Lerp(Camera->FieldOfView, WalkingFOV, AlphaFOV);
+
+		if (!bIsMidAir)
+		{
+			GetWorld()->GetFirstPlayerController()->PlayerCameraManager->StartCameraShake(WalkingHeadBob, 1.f);
+		}
 		
 		if (MovementVector.Y > 0.0f)
 		{
@@ -137,11 +155,11 @@ void APlayerCharacter::CheckPlayerState()
 		}
 		break;
 
-	case Eps_Dash:
-		
-		break;
-
 	case Eps_WallRun:
+		
+		Camera->FieldOfView = FMath::Lerp(Camera->FieldOfView, WallRunFOV, AlphaFOV);
+		
+		GetWorld()->GetFirstPlayerController()->PlayerCameraManager->StartCameraShake(WallRunningHeadBob, 1.f);
 		
 		if (bIsWallRunningL)
 		{
@@ -161,6 +179,16 @@ void APlayerCharacter::CheckPlayerState()
 	case Eps_Crouch:
 		
 		this->GetCharacterMovement()->MaxWalkSpeed = CrouchWalkSpeed;
+
+		if (!bIsMidAir)
+		{
+			GetWorld()->GetFirstPlayerController()->PlayerCameraManager->StartCameraShake(CrouchHeadBob, 1.f);
+		}
+		
+		if (!bIsSliding)
+		{
+			Camera->FieldOfView = FMath::Lerp(Camera->FieldOfView, WalkingFOV, AlphaFOV);
+		}
 
 		if (bIsCrouchKeyDown || CanStand() == false || bIsSliding)
 		{
@@ -487,6 +515,8 @@ void APlayerCharacter::StartSliding()
 
 	GetCharacterMovement()->BrakingFrictionFactor = SlideFriction;
 
+	Camera->FieldOfView = SlidingFOV;
+
 	FVector LaunchDirection = GetActorForwardVector();
 	LaunchDirection.Z = 0.0f;
 	LaunchDirection.Normalize();
@@ -569,10 +599,13 @@ void APlayerCharacter::DontClimb()
 void APlayerCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
+
+	GetWorld()->GetFirstPlayerController()->PlayerCameraManager->StartCameraShake(LandShake, 1.f);
 	
 	bIsGrounded = true;
 	bCanDoubleJump = false;
 	bCanDash = true;
+	bCanClimb = false;
 
 	StopWallRun();
 	bWallRunSuppressed = false;

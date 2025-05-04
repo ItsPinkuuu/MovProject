@@ -59,8 +59,53 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 
 
 	/** CAMERA */
+	UPROPERTY(EditAnywhere, Category = "Movement|Camera", meta = (AllowPrivateAccess = "true"))
+	float AlphaFOV;
+	
+	UPROPERTY(EditAnywhere, Category = "Movement|Camera|Idle|Head Bobbing", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UCameraShakeBase> IdleHeadBob;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Camera|Walking|Head Bobbing", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UCameraShakeBase> WalkingHeadBob;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Camera|Walking|FOV", meta = (AllowPrivateAccess = "true"))
+	float WalkingFOV;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Camera|Walking|Camera Height", meta = (AllowPrivateAccess = "true"))
+	float StandingCameraZOffset;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Camera|Jump|Camera Shake", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UCameraShakeBase> JumpShake;
+	
+	UPROPERTY(EditAnywhere, Category = "Movement|Camera|Jump|Camera Shake", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UCameraShakeBase> LandShake;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Camera|Dash|FOV Change", meta = (AllowPrivateAccess = "true"))
+	float DashFOV;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Camera|Wall Running|Head Bobbing", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UCameraShakeBase> WallRunningHeadBob;
+	
 	UPROPERTY(EditAnywhere, Category = "Movement|Camera|Wall Running|Camera Tilt", meta = (AllowPrivateAccess = "true"))
 	float WallRunCameraTiltSpeed;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Camera|Wall Running|Camera Tilt", meta = (AllowPrivateAccess = "true"))
+	float WallRunCameraTiltAmount;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Camera|Wall Running|FOV", meta = (AllowPrivateAccess = "true"))
+	float WallRunFOV;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Camera|Crouching|Head Bobbing", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UCameraShakeBase> CrouchHeadBob;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Camera|Crouching|Camera Height", meta = (AllowPrivateAccess = "true"))
+	float CrouchingCameraHeight;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Camera|Sliding|FOV Change", meta = (AllowPrivateAccess = "true"))
+	float SlidingFOV;
+
+	UPROPERTY(EditAnywhere, Category = "Movement|Camera|Climbing|Head Bobbing", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UCameraShakeBase> ClimbingHeadBob;
 	
 	/** WALKING */
 	
@@ -132,9 +177,6 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 
 	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
 	bool bWallRunSuppressed;
-
-	UPROPERTY(EditAnywhere, Category = "Movement|Wall Running", meta = (AllowPrivateAccess = "true"))
-	float WallRunCameraTiltAmount;
 	
 	
 	// UPROPERTY(EditAnywhere)
@@ -156,12 +198,6 @@ class MOVPROJECT_API APlayerCharacter : public ACharacter
 
 	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
 	float CrouchingCapsuleHalfHeight;
-
-	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
-	float StandingCameraZOffset;
-
-	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
-	float CrouchingCameraHeight;
 
 	UPROPERTY(EditAnywhere, Category = "Movement|Crouching", meta = (AllowPrivateAccess = "true"))
 	float CrouchHeightChangeSpeed;
@@ -296,6 +332,9 @@ protected:
 
 
 private:
+
+	bool bIsMidAir;
+	
 	/** DEFAULT MOVEMENT */
 	FVector2D MovementVector;
 
