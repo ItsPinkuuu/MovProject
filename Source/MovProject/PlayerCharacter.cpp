@@ -635,7 +635,9 @@ void APlayerCharacter::DoubleJump()
 		
 		SuppressWallRun(0.35f);
 		
-		LaunchCharacter(FVector(WallRunNormal.X * WallRunJumpForce, WallRunNormal.Y * WallRunJumpForce, CharLaunchForce), false, true);
+		LaunchCharacter(FVector(
+			WallRunNormal.X * WallRunJumpForce, WallRunNormal.Y * WallRunJumpForce, CharLaunchForce),
+			false, true);
 	}
 }
 
