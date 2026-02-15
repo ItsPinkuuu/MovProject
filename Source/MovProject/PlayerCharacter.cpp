@@ -24,6 +24,7 @@ APlayerCharacter::APlayerCharacter()
 
 	// Creates Wall Running Component
 	// WallRunComponent = CreateDefaultSubobject<UWallRunComponent>(TEXT("Wall Run Component"));
+
 	
 }
 
